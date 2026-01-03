@@ -1,0 +1,454 @@
+generator client {
+    provider   = "prisma-client-js"
+    engineType = "node-api"
+    // output        = "./src/generated/prisma"
+    // engineType = "dataproxy"
+    binaryTargets = ["native", "debian-openssl-1.0.x"]
+    // previewFeatures = ["dataProxy"]
+    // binaryTargets = ["native", "rhel-openssl-1.1.x"]
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+// Enum for language
+enum Language {
+    ID // Indonesian
+    EN // English
+}
+
+enum FormType {
+    CATALOG
+    CONTACT
+}
+
+enum UserStatus {
+    ACTIVE
+    INACTIVE
+    SUSPENDED
+}
+
+enum BrandType {
+    PRODUCT
+    CLIENT
+}
+
+// ========================
+// ROLE & PERMISSION SYSTEM
+// ========================
+
+model Role {
+    id          String       @id @default(cuid())
+    name        String       @unique @db.VarChar(100)
+    description String?      @db.Text
+    isSystem    Boolean      @default(false)
+    permissions Permission[]
+    users       User[]
+    createdAt   DateTime     @default(now())
+    updatedAt   DateTime     @updatedAt
+    deletedAt   DateTime?
+
+    @@map("roles")
+}
+
+model Permission {
+    id       String @id @default(cuid())
+    action   String @db.VarChar(100)
+    resource String @db.VarChar(100)
+    roleId   String
+    role     Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+    @@unique([roleId, action, resource])
+    @@map("permissions")
+}
+
+// ========================
+// USER
+// ========================
+
+model User {
+    id           String     @id @default(cuid())
+    name         String     @db.VarChar(100)
+    email        String     @unique @db.VarChar(150)
+    phone        String     @db.VarChar(20)
+    password     String     @db.VarChar(255)
+    status       UserStatus @default(ACTIVE)
+    avatar       String?    @db.Text
+    lastLoginAt  DateTime?
+    lastForgotAt DateTime?  @db.DateTime(3)
+    createdAt    DateTime   @default(now())
+    updatedAt    DateTime   @updatedAt
+    deletedAt    DateTime?
+
+    roleId String
+    role   Role   @relation(fields: [roleId], references: [id])
+
+    blogs          Blog[]
+    auditLogs      AuditLog[]
+    tokens         Token[]
+    sessions       Session[]
+    repliedClients Client[]       @relation("ClientRepliedByUser")
+    notifications  Notification[]
+
+    @@map("users")
+}
+
+// ========================
+// SESSION
+// ========================
+
+model Session {
+    id        String   @id @default(cuid())
+    userId    String
+    tokenHash String   @unique @db.VarChar(255)
+    ipAddress String?  @db.VarChar(45)
+    userAgent String?  @db.Text
+    expiresAt DateTime
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("sessions")
+}
+
+// ========================
+// CATEGORY
+// ========================
+
+model Category {
+    id          String    @id @default(cuid())
+    slug        String    @unique @db.VarChar(100)
+    name        String    @db.VarChar(100)
+    description String?   @db.Text
+    isActive    Boolean   @default(true)
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    deletedAt   DateTime?
+
+    products Product[]
+
+    @@map("categories")
+}
+
+// ========================
+// BRAND
+// ========================
+
+model Brand {
+    id        String    @id @default(cuid())
+    slug      String    @unique @db.VarChar(100)
+    logo      String?   @db.Text
+    name      String    @db.VarChar(100)
+    type      BrandType @default(PRODUCT)
+    isActive  Boolean   @default(true)
+    sortOrder Int       @default(0)
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    products Product[]
+
+    @@map("brands")
+}
+
+// ========================
+// PRODUCT
+// ========================
+
+model Product {
+    id         String    @id @default(cuid())
+    slug       String    @unique @db.VarChar(150)
+    sku        String?   @unique @db.VarChar(50)
+    name       String    @db.VarChar(200)
+    categoryId String
+    brandId    String
+    images     Json? // Array of image URLs
+    sortOrder  Int       @default(0)
+    isActive   Boolean   @default(true)
+    isFeatured Boolean   @default(false)
+    viewCount  Int       @default(0)
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    deletedAt  DateTime?
+
+    category     Category             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+    brand        Brand                @relation(fields: [brandId], references: [id], onDelete: Restrict)
+    translations ProductTranslation[]
+
+    @@map("products")
+}
+
+model ProductTranslation {
+    id               String   @id @default(cuid())
+    productId        String
+    language         Language
+    shortDescription String?  @db.Text
+    longDescription  String?  @db.Text
+    specifications   Json?
+    features         Json?
+    metaTitle        String?  @db.VarChar(255)
+    metaDescription  String?  @db.Text
+    metaKeywords     String?  @db.Text
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
+
+    product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+    @@unique([productId, language])
+    @@map("product_translations")
+}
+
+// ========================
+// BLOG
+// ========================
+
+model Blog {
+    id          String    @id @default(cuid())
+    slug        String    @unique @db.VarChar(200)
+    image       String?   @db.Text
+    link        String?   @db.Text
+    authorId    String
+    isPublished Boolean   @default(false)
+    isFeatured  Boolean   @default(false)
+    viewCount   Int       @default(0)
+    publishedAt DateTime?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    deletedAt   DateTime?
+
+    author       User              @relation(fields: [authorId], references: [id], onDelete: Restrict)
+    translations BlogTranslation[]
+
+    @@map("blogs")
+}
+
+model BlogTranslation {
+    id              String   @id @default(cuid())
+    blogId          String
+    language        Language
+    title           String   @db.VarChar(255)
+    excerpt         String?  @db.Text
+    content         String   @db.Text
+    metaTitle       String?  @db.VarChar(255)
+    metaDescription String?  @db.Text
+    metaKeywords    String?  @db.Text
+    tags            Json?
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    blog Blog @relation(fields: [blogId], references: [id], onDelete: Cascade)
+
+    @@unique([blogId, language])
+    @@map("blog_translations")
+}
+
+// ========================
+// Gallery
+// ========================
+
+model Gallery {
+    id        String    @id @default(cuid())
+    image     String    @db.Text
+    createdAt DateTime  @default(now())
+    deletedAt DateTime?
+
+    @@map("galleries")
+}
+
+// ========================
+// CLIENT (FORM)
+// ========================
+
+model Client {
+    id        String    @id @default(cuid())
+    company   String    @db.VarChar(150)
+    address   String    @db.Text
+    country   String    @db.VarChar(100)
+    name      String    @db.VarChar(100)
+    phone     String    @db.VarChar(20)
+    email     String    @db.VarChar(150)
+    fax       String?   @db.VarChar(20)
+    message   String    @db.Text
+    formType  FormType
+    catalogId String?
+    isReplied Boolean   @default(false)
+    repliedAt DateTime?
+    repliedBy String? // ID of user who replied
+    ipAddress String?   @db.VarChar(45)
+    userAgent String?   @db.Text
+    source    String?   @db.VarChar(100)
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    catalog       Catalog? @relation(fields: [catalogId], references: [id])
+    repliedByUser User?    @relation("ClientRepliedByUser", fields: [repliedBy], references: [id])
+
+    @@index([formType])
+    @@index([createdAt])
+    @@map("clients")
+}
+
+// ========================
+// CATALOG
+// ========================
+
+model Catalog {
+    id          String    @id @default(cuid())
+    name        String    @db.VarChar(200)
+    description String?   @db.Text
+    file        String    @db.Text
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    deletedAt   DateTime?
+
+    clients Client[]
+
+    @@map("catalogs")
+}
+
+// ========================
+// TOKEN
+// ========================
+
+model Token {
+    id        String    @id @default(cuid())
+    userId    String
+    token     String    @unique @db.VarChar(512)
+    type      String    @db.VarChar(50)
+    expiresAt DateTime
+    isRevoked Boolean   @default(false)
+    usedAt    DateTime?
+    ipAddress String?   @db.VarChar(45)
+    userAgent String?   @db.Text
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([type])
+    @@index([expiresAt])
+    @@index([isRevoked])
+    @@map("tokens")
+}
+
+// ========================
+// AUDIT LOG
+// ========================
+
+model AuditLog {
+    id        String   @id @default(cuid())
+    userId    String?
+    action    String   @db.VarChar(100)
+    tableName String   @db.VarChar(50)
+    recordId  String?  @db.VarChar(50)
+    oldValues Json?
+    newValues Json?
+    ipAddress String?  @db.VarChar(45)
+    userAgent String?  @db.Text
+    details   String?  @db.Text
+    createdAt DateTime @default(now())
+
+    user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+    @@index([userId])
+    @@index([action])
+    @@index([tableName])
+    @@index([createdAt])
+    @@map("audit_logs")
+}
+
+// ========================
+// ANALYTICS
+// ========================
+
+model Analytics {
+    id              String   @id @default(cuid())
+    date            DateTime @db.Date
+    visitor         Int      @default(0)
+    uniqueVisitor   Int      @default(0)
+    pageViews       Int      @default(0)
+    sessions        Int      @default(0)
+    bounceRate      Decimal? @db.Decimal(5, 2)
+    avgSessionTime  Int?     @default(0)
+    pages           Json?
+    referrers       Json?
+    countries       Json?
+    device          Json?
+    browser         Json?
+    operatingSystem Json?
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@unique([date])
+    @@index([date])
+    @@map("analytics")
+}
+
+model PageView {
+    id        String   @id @default(cuid())
+    sessionId String   @db.VarChar(100)
+    page      String   @db.VarChar(500)
+    title     String?  @db.VarChar(255)
+    referrer  String?  @db.VarChar(500)
+    country   String?  @db.VarChar(3)
+    device    String?  @db.VarChar(20)
+    browser   String?  @db.VarChar(50)
+    os        String?  @db.VarChar(50)
+    ipAddress String?  @db.VarChar(100)
+    userAgent String?  @db.Text
+    duration  Int?     @default(0)
+    createdAt DateTime @default(now())
+
+    @@index([sessionId])
+    @@index([page])
+    @@index([createdAt])
+    @@map("page_views")
+}
+
+// ========================
+// SETTINGS
+// ========================
+
+model Settings {
+    id        String   @id @default(cuid())
+    key       String   @unique @db.VarChar(100)
+    value     Json
+    type      String   @db.VarChar(50)
+    group     String?  @db.VarChar(50)
+    isPublic  Boolean  @default(false)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([group])
+    @@index([isPublic])
+    @@map("settings")
+}
+
+model Notification {
+    id        String    @id @default(cuid())
+    userId    String
+    type      String // e.g., "new_client", "visitor_summary"
+    priority  String    @default("medium") // "low" | "medium" | "high"
+    title     String    @db.VarChar(255)
+    message   String    @db.Text
+    timestamp DateTime  @default(now())
+    isRead    Boolean   @default(false)
+    readAt    DateTime?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+
+    // Referensi ke sumber data asli
+    sourceType String  @db.VarChar(50) // "clients", "audit_logs", "analytics"
+    sourceId   String? @db.VarChar(100)
+    sourceData Json?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId, isRead])
+    @@index([timestamp])
+    @@map("notifications")
+}

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" href="../../public/images/logo/logo-white.png" type="image/png">
+        <title>API Status</title>
+        <style>
+            :root {
+                --Primary: #2d4c52;
+                --Secondary: #46777e;
+                --Third: #6ba4a8;
+                --Fourth: #d8f6da;
+                --Accent: #f3994b;
+                --Hover: #d95d39;
+                --White: #ffffff;
+                --Black: #000000;
+                --LayerPrimary: rgba(45, 76, 82, 0.7);
+                --LayerSecondary: rgba(45, 76, 82, 0.85);
+                --Card: #f4f6f6;
+                --Footer: #1c2e33;
+            }
+
+            body {
+                margin: 0;
+                font-family: "Inter", Arial, sans-serif;
+                background: linear-gradient(
+                    135deg,
+                    var(--Primary),
+                    var(--Secondary),
+                    var(--Third)
+                );
+                color: var(--White);
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .card {
+                background: var(--LayerPrimary);
+                width: 420px;
+                padding: 40px 50px;
+                border-radius: 18px;
+                text-align: center;
+                backdrop-filter: blur(12px);
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+                animation: fadeIn 0.6s ease-in-out;
+            }
+
+            h1 {
+                margin: 0;
+                font-size: 34px;
+                font-weight: 700;
+                color: var(--Fourth);
+            }
+
+            p {
+                margin-top: 12px;
+                font-size: 16px;
+                opacity: 0.9;
+                color: var(--White);
+            }
+
+            .info {
+                margin-top: 20px;
+                font-size: 14px;
+                opacity: 0.85;
+                line-height: 1.7;
+            }
+
+            .status {
+                color: var(--Accent);
+                font-weight: 600;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(15px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h1>API is Running</h1>
+            <p>Backend is running successfully.</p>
+            <div class="info">
+                <div>
+                    <strong>Status:</strong>
+                    <span class="status">Operational</span>
+                </div>
+                <div><strong>Version:</strong> 1.4.32</div>
+                <div><strong>Company:</strong> PT ENERKOMP PERSADA RAYA</div>
+            </div>
+        </div>
+    </body>
+</html>
