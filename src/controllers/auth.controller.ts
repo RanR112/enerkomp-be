@@ -23,6 +23,7 @@
 
 import { Request, Response } from "express";
 import { AuthService } from "../services/auth.service";
+import { jwtConfig } from "../config/jwt.config";
 
 export class AuthController {
     constructor(private authService: AuthService) {}
@@ -92,7 +93,7 @@ export class AuthController {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "none",
-                maxAge: 15 * 60 * 1000, // 15 menit
+                maxAge: jwtConfig.accessTokenExpiresIn, // 15 menit
             });
 
             res.status(200).json({ accessToken: newAccessToken });
@@ -290,14 +291,14 @@ export class AuthController {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "none",
-            maxAge: 15 * 60 * 1000,
+            maxAge: jwtConfig.accessTokenExpiresIn,
         });
 
         res.cookie("refresh_token", refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "none",
-            maxAge: 7 * 24 * 60 * 60 * 1000,
+            maxAge: jwtConfig.refreshTokenExpiresIn,
         });
     }
 
