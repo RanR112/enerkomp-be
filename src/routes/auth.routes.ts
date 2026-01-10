@@ -45,7 +45,7 @@ export function makeAuthRouter(authService: AuthService): Router {
     // Protected endpoints (memerlukan autentikasi)
     router.use(authMiddleware.authenticate());
     router.get("/me", controller.getMe);
-    router.put("/me", controller.updateMe);
+    router.patch("/me", controller.updateMe);
     router.patch("/me/avatar", controller.updateOwnAvatar);
     router.delete("/me/avatar", controller.deleteOwnAvatar);
 

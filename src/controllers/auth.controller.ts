@@ -225,7 +225,7 @@ export class AuthController {
     };
 
     /**
-     * Endpoint: PUT /me
+     * Endpoint: PATCH /me
      * Update profil pengguna saat ini
      */
     updateMe = async (req: Request, res: Response): Promise<void> => {
