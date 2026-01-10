@@ -51,7 +51,6 @@ export class AnalyticsService {
     constructor(
         private prisma: PrismaClient,
         private utmService: UtmService,
-        private timezoneService: TimezoneService
     ) {}
 
     /**

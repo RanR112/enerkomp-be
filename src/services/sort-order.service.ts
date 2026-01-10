@@ -194,14 +194,6 @@ export class SortOrderService {
         });
     }
 
-    private getModel(model: SortOrderModel) {
-        const prismaModel = this.modelMap[model];
-        if (!prismaModel) {
-            throw new Error(`Unsupported model: ${model}`);
-        }
-        return prismaModel;
-    }
-
     /**
      * Parse input sortOrder ke number valid
      * - Input bisa string (form-data) atau number (JSON)
@@ -225,5 +217,13 @@ export class SortOrderService {
         }
 
         return num;
+    }
+
+    private getModel(model: SortOrderModel) {
+        const prismaModel = this.modelMap[model];
+        if (!prismaModel) {
+            throw new Error(`Unsupported model: ${model}`);
+        }
+        return prismaModel;
     }
 }

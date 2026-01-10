@@ -32,14 +32,16 @@
 
 import nodemailer, { Transporter, SendMailOptions } from "nodemailer";
 
+export interface EmailAuthConfig {
+    user: string;
+    pass: string;
+}
+
 export interface EmailServiceConfig {
     host: string;
     port: number;
     secure: boolean;
-    auth: {
-        user: string;
-        pass: string;
-    };
+    auth: EmailAuthConfig
     from: string;
 }
 

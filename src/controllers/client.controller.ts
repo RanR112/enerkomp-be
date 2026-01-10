@@ -27,6 +27,7 @@ import { ClientService } from "../services/client.service";
 import { NotificationService } from "../services/notification.service";
 import { ExportService } from "../services/reporting/export.service";
 import { TimezoneService } from "../services/timezone.service";
+import { handleError } from "../utils/http-helper";
 
 export class ClientController {
     constructor(
@@ -79,7 +80,7 @@ export class ClientController {
 
             res.status(200).json(result);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch clients");
+            handleError(res, error, "Failed to fetch clients");
         }
     };
 
@@ -99,7 +100,7 @@ export class ClientController {
 
             res.status(200).json(client);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch client");
+            handleError(res, error, "Failed to fetch client");
         }
     };
 
@@ -187,7 +188,7 @@ export class ClientController {
                 emailSent: result.emailSent,
             });
         } catch (error) {
-            this.handleError(res, error, "Failed to submit form", 400);
+            handleError(res, error, "Failed to submit form", 400);
         }
     };
 
@@ -242,7 +243,7 @@ export class ClientController {
                 data: updatedClient,
             });
         } catch (error) {
-            this.handleError(res, error, "Failed to update client", 500);
+            handleError(res, error, "Failed to update client", 500);
         }
     };
 
@@ -263,7 +264,7 @@ export class ClientController {
 
             res.status(200).json({ message: "Client replied successfully" });
         } catch (error) {
-            this.handleError(res, error, "Failed to reply to client", 400);
+            handleError(res, error, "Failed to reply to client", 400);
         }
     };
 
@@ -284,7 +285,7 @@ export class ClientController {
 
             res.status(200).json({ message: "Client deleted successfully" });
         } catch (error) {
-            this.handleError(res, error, "Failed to delete client", 400);
+            handleError(res, error, "Failed to delete client", 400);
         }
     };
 
@@ -351,7 +352,7 @@ export class ClientController {
             const filename = `client-${year}-${month}`;
             await this.exportService.toExcel(sheets, filename, res);
         } catch (error) {
-            this.handleError(res, error, "Export to Excel failed");
+            handleError(res, error, "Export to Excel failed");
         }
     };
 
@@ -410,18 +411,7 @@ export class ClientController {
 
             this.exportService.toPdf(exportData, filename, title, res);
         } catch (error) {
-            this.handleError(res, error, "Export to PDF failed");
+            handleError(res, error, "Export to PDF failed");
         }
     };
-
-    // Helper methods
-    private handleError(
-        res: Response,
-        error: unknown,
-        defaultMessage: string,
-        statusCode: number = 500
-    ): void {
-        const message = error instanceof Error ? error.message : defaultMessage;
-        res.status(statusCode).json({ error: message });
-    }
 }

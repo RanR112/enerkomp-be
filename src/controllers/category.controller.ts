@@ -22,6 +22,7 @@
 import { Request, Response } from "express";
 import { CategoryService } from "../services/category.service";
 import { SlugService } from "../services/slug.service";
+import { getClientIp, handleError } from "../utils/http-helper";
 
 export class CategoryController {
     constructor(
@@ -46,7 +47,7 @@ export class CategoryController {
 
             res.status(200).json(result);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch categories");
+            handleError(res, error, "Failed to fetch categories");
         }
     };
 
@@ -66,7 +67,7 @@ export class CategoryController {
 
             res.status(200).json(category);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch category");
+            handleError(res, error, "Failed to fetch category");
         }
     };
 
@@ -92,13 +93,13 @@ export class CategoryController {
                 description: description || null,
                 isActive,
                 createdBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(201).json(category);
         } catch (error) {
-            this.handleError(res, error, "Failed to create category", 400);
+            handleError(res, error, "Failed to create category", 400);
         }
     };
 
@@ -126,13 +127,13 @@ export class CategoryController {
                 description: description || null,
                 isActive,
                 updatedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(200).json(category);
         } catch (error) {
-            this.handleError(res, error, "Failed to update category", 400);
+            handleError(res, error, "Failed to update category", 400);
         }
     };
 
@@ -147,13 +148,13 @@ export class CategoryController {
             await this.categoryService.delete({
                 id,
                 deletedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(200).json({ message: "Category deleted successfully" });
         } catch (error) {
-            this.handleError(res, error, "Failed to delete category", 400);
+            handleError(res, error, "Failed to delete category", 400);
         }
     };
 
@@ -168,33 +169,13 @@ export class CategoryController {
             await this.categoryService.hardDelete({
                 id,
                 deletedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(204).end();
         } catch (error) {
-            this.handleError(res, error, "Failed to hard delete category", 400);
+            handleError(res, error, "Failed to hard delete category", 400);
         }
     };
-
-    // Helper methods
-    private getClientIp(req: Request): string {
-        return (
-            req.ip ||
-            (req.connection as any)?.remoteAddress ||
-            (req.headers["x-forwarded-for"] as string) ||
-            ""
-        );
-    }
-
-    private handleError(
-        res: Response,
-        error: unknown,
-        defaultMessage: string,
-        statusCode: number = 500
-    ): void {
-        const message = error instanceof Error ? error.message : defaultMessage;
-        res.status(statusCode).json({ error: message });
-    }
 }

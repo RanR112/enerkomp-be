@@ -24,6 +24,7 @@ import { Request, Response } from "express";
 import { UserStatus } from "@prisma/client";
 import { UserService } from "../services/user.service";
 import { ExportService } from "../services/reporting/export.service";
+import { getClientIp, handleError } from "../utils/http-helper";
 
 export class UserController {
     constructor(
@@ -48,7 +49,7 @@ export class UserController {
 
             res.status(200).json(result);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch users");
+            handleError(res, error, "Failed to fetch users");
         }
     };
 
@@ -68,7 +69,7 @@ export class UserController {
 
             res.status(200).json(user);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch user");
+            handleError(res, error, "Failed to fetch user");
         }
     };
 
@@ -95,14 +96,14 @@ export class UserController {
                 roleId,
                 status: status as UserStatus,
                 createdBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
                 avatarFile: req.file,
             });
 
             res.status(201).json(user);
         } catch (error) {
-            this.handleError(res, error, "Failed to create user", 400);
+            handleError(res, error, "Failed to create user", 400);
         }
     };
 
@@ -130,14 +131,14 @@ export class UserController {
                 roleId,
                 status: status as UserStatus,
                 updatedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
                 avatarFile: req.file,
             });
 
             res.status(200).json(user);
         } catch (error) {
-            this.handleError(res, error, "Failed to update user", 400);
+            handleError(res, error, "Failed to update user", 400);
         }
     };
 
@@ -152,13 +153,13 @@ export class UserController {
             await this.userService.delete({
                 id,
                 deletedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(200).json({ message: "User deleted successfully" });
         } catch (error) {
-            this.handleError(res, error, "Failed to delete user", 400);
+            handleError(res, error, "Failed to delete user", 400);
         }
     };
 
@@ -173,13 +174,13 @@ export class UserController {
             await this.userService.hardDelete({
                 id,
                 deletedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(204).end();
         } catch (error) {
-            this.handleError(res, error, "Failed to hard delete user", 400);
+            handleError(res, error, "Failed to hard delete user", 400);
         }
     };
 
@@ -200,7 +201,7 @@ export class UserController {
                 targetUserId,
                 req.file,
                 req.user!.id,
-                this.getClientIp(req),
+                getClientIp(req),
                 req.get("User-Agent") || ""
             );
 
@@ -209,7 +210,7 @@ export class UserController {
                 avatar: avatarUrl,
             });
         } catch (error) {
-            this.handleError(res, error, "Failed to update avatar", 400);
+            handleError(res, error, "Failed to update avatar", 400);
         }
     };
 
@@ -224,7 +225,7 @@ export class UserController {
             await this.userService.deleteAvatar(
                 targetUserId,
                 req.user!.id,
-                this.getClientIp(req),
+                getClientIp(req),
                 req.get("User-Agent") || ""
             );
 
@@ -233,7 +234,7 @@ export class UserController {
                 avatar: "/uploads/avatars/default-avatar.png",
             });
         } catch (error) {
-            this.handleError(res, error, "Failed to delete avatar", 400);
+            handleError(res, error, "Failed to delete avatar", 400);
         }
     };
 
@@ -271,7 +272,7 @@ export class UserController {
 
             await this.exportService.toExcel(sheets, "users-report", res);
         } catch (error) {
-            this.handleError(res, error, "Export to Excel failed");
+            handleError(res, error, "Export to Excel failed");
         }
     };
 
@@ -305,27 +306,7 @@ export class UserController {
                 res
             );
         } catch (error) {
-            this.handleError(res, error, "Export to PDF failed");
+            handleError(res, error, "Export to PDF failed");
         }
     };
-
-    // Helper methods
-    private getClientIp(req: Request): string {
-        return (
-            req.ip ||
-            (req.connection as any)?.remoteAddress ||
-            (req.headers["x-forwarded-for"] as string) ||
-            ""
-        );
-    }
-
-    private handleError(
-        res: Response,
-        error: unknown,
-        defaultMessage: string,
-        statusCode: number = 500
-    ): void {
-        const message = error instanceof Error ? error.message : defaultMessage;
-        res.status(statusCode).json({ error: message });
-    }
 }

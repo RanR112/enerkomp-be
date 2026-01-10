@@ -20,6 +20,7 @@
 
 import { Request, Response } from "express";
 import { AuditService } from "../services/audit.service";
+import { handleError } from "../utils/http-helper";
 
 export class AuditLogController {
     constructor(private auditService: AuditService) {}
@@ -52,18 +53,7 @@ export class AuditLogController {
 
             res.status(200).json(result);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch audit logs", 400);
+            handleError(res, error, "Failed to fetch audit logs", 400);
         }
     };
-
-    // Helper methods
-    private handleError(
-        res: Response,
-        error: unknown,
-        defaultMessage: string,
-        statusCode: number = 500
-    ): void {
-        const message = error instanceof Error ? error.message : defaultMessage;
-        res.status(statusCode).json({ error: message });
-    }
 }

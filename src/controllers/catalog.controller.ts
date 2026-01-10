@@ -21,6 +21,7 @@
 
 import { Request, Response } from "express";
 import { CatalogService } from "../services/catalog.service";
+import { getClientIp, handleError } from "../utils/http-helper";
 
 export class CatalogController {
     constructor(private catalogService: CatalogService) {}
@@ -42,7 +43,7 @@ export class CatalogController {
 
             res.status(200).json(result);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch catalogs");
+            handleError(res, error, "Failed to fetch catalogs");
         }
     };
 
@@ -62,7 +63,7 @@ export class CatalogController {
 
             res.status(200).json(catalog);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch catalog");
+            handleError(res, error, "Failed to fetch catalog");
         }
     };
 
@@ -89,13 +90,13 @@ export class CatalogController {
                 description: description || null,
                 fileUrl,
                 createdBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(201).json(catalog);
         } catch (error) {
-            this.handleError(res, error, "Failed to create catalog", 400);
+            handleError(res, error, "Failed to create catalog", 400);
         }
     };
 
@@ -124,13 +125,13 @@ export class CatalogController {
                 description: description || null,
                 fileUrl,
                 updatedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(200).json(catalog);
         } catch (error) {
-            this.handleError(res, error, "Failed to update catalog", 400);
+            handleError(res, error, "Failed to update catalog", 400);
         }
     };
 
@@ -145,33 +146,13 @@ export class CatalogController {
             await this.catalogService.delete({
                 id,
                 deletedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(200).json({ message: "Catalog deleted successfully" });
         } catch (error) {
-            this.handleError(res, error, "Failed to delete catalog", 400);
+            handleError(res, error, "Failed to delete catalog", 400);
         }
     };
-
-    // Helper methods
-    private getClientIp(req: Request): string {
-        return (
-            req.ip ||
-            (req.connection as any)?.remoteAddress ||
-            (req.headers["x-forwarded-for"] as string) ||
-            ""
-        );
-    }
-
-    private handleError(
-        res: Response,
-        error: unknown,
-        defaultMessage: string,
-        statusCode: number = 500
-    ): void {
-        const message = error instanceof Error ? error.message : defaultMessage;
-        res.status(statusCode).json({ error: message });
-    }
 }

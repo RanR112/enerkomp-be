@@ -24,6 +24,7 @@ import { Request, Response } from "express";
 import { Language } from "@prisma/client";
 import { BlogService } from "../services/blog.service";
 import { SlugService } from "../services/slug.service";
+import { getClientIp, handleError } from "../utils/http-helper";
 
 export interface BlogTranslation {
     language: Language;
@@ -66,7 +67,7 @@ export class BlogController {
 
             res.status(200).json(result);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch blogs");
+            handleError(res, error, "Failed to fetch blogs");
         }
     };
 
@@ -88,7 +89,7 @@ export class BlogController {
 
             res.status(200).json(blog);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch blog");
+            handleError(res, error, "Failed to fetch blog");
         }
     };
 
@@ -168,13 +169,13 @@ export class BlogController {
                 translations,
                 authorId: req.user!.id,
                 createdBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(201).json(blog);
         } catch (error) {
-            this.handleError(res, error, "Failed to create blog", 400);
+            handleError(res, error, "Failed to create blog", 400);
         }
     };
 
@@ -262,13 +263,13 @@ export class BlogController {
                 translations: parsedTranslations,
                 authorId: req.user!.id,
                 updatedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(200).json(blog);
         } catch (error) {
-            this.handleError(res, error, "Failed to update blog", 400);
+            handleError(res, error, "Failed to update blog", 400);
         }
     };
 
@@ -283,13 +284,13 @@ export class BlogController {
             await this.blogService.delete({
                 id,
                 deletedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(200).json({ message: "Blog deleted successfully" });
         } catch (error) {
-            this.handleError(res, error, "Failed to delete blog", 400);
+            handleError(res, error, "Failed to delete blog", 400);
         }
     };
 
@@ -304,33 +305,13 @@ export class BlogController {
             await this.blogService.hardDelete({
                 id,
                 deletedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(204).end();
         } catch (error) {
-            this.handleError(res, error, "Failed to hard delete blog", 400);
+            handleError(res, error, "Failed to hard delete blog", 400);
         }
     };
-
-    // Helper methods
-    private getClientIp(req: Request): string {
-        return (
-            req.ip ||
-            (req.connection as any)?.remoteAddress ||
-            (req.headers["x-forwarded-for"] as string) ||
-            ""
-        );
-    }
-
-    private handleError(
-        res: Response,
-        error: unknown,
-        defaultMessage: string,
-        statusCode: number = 500
-    ): void {
-        const message = error instanceof Error ? error.message : defaultMessage;
-        res.status(statusCode).json({ error: message });
-    }
 }

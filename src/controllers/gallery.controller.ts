@@ -21,6 +21,7 @@
 
 import { Request, Response } from "express";
 import { GalleryService } from "../services/gallery.service";
+import { getClientIp, handleError } from "../utils/http-helper";
 
 export class GalleryController {
     constructor(private galleryService: GalleryService) {}
@@ -41,7 +42,7 @@ export class GalleryController {
 
             res.status(200).json(result);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch galleries");
+            handleError(res, error, "Failed to fetch galleries");
         }
     };
 
@@ -61,7 +62,7 @@ export class GalleryController {
 
             res.status(200).json(gallery);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch gallery image");
+            handleError(res, error, "Failed to fetch gallery image");
         }
     };
 
@@ -84,13 +85,13 @@ export class GalleryController {
             const gallery = await this.galleryService.create({
                 imageUrl,
                 createdBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(201).json(gallery);
         } catch (error) {
-            this.handleError(res, error, "Failed to add gallery image", 400);
+            handleError(res, error, "Failed to add gallery image", 400);
         }
     };
 
@@ -105,7 +106,7 @@ export class GalleryController {
             await this.galleryService.delete({
                 id,
                 deletedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
@@ -113,7 +114,7 @@ export class GalleryController {
                 message: "Gallery image deleted successfully",
             });
         } catch (error) {
-            this.handleError(res, error, "Failed to delete gallery image", 400);
+            handleError(res, error, "Failed to delete gallery image", 400);
         }
     };
 
@@ -128,13 +129,13 @@ export class GalleryController {
             await this.galleryService.hardDelete({
                 id,
                 deletedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(204).end();
         } catch (error) {
-            this.handleError(
+            handleError(
                 res,
                 error,
                 "Failed to hard delete gallery image",
@@ -142,24 +143,4 @@ export class GalleryController {
             );
         }
     };
-
-    // Helper methods
-    private getClientIp(req: Request): string {
-        return (
-            req.ip ||
-            (req.connection as any)?.remoteAddress ||
-            (req.headers["x-forwarded-for"] as string) ||
-            ""
-        );
-    }
-
-    private handleError(
-        res: Response,
-        error: unknown,
-        defaultMessage: string,
-        statusCode: number = 500
-    ): void {
-        const message = error instanceof Error ? error.message : defaultMessage;
-        res.status(statusCode).json({ error: message });
-    }
 }

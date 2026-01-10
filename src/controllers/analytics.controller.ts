@@ -23,14 +23,13 @@
 import { Request, Response } from "express";
 import dayjs from "dayjs";
 import { AnalyticsService } from "../services/analytics.service";
-import { UtmService } from "../services/utm.service";
 import { TimezoneService } from "../services/timezone.service";
 import { ExportService } from "../services/reporting/export.service";
+import { getClientIp, handleError } from "../utils/http-helper";
 
 export class AnalyticsController {
     constructor(
         private analyticsService: AnalyticsService,
-        private utmService: UtmService,
         private timezoneService: TimezoneService,
         private exportService: ExportService
     ) {}
@@ -52,7 +51,7 @@ export class AnalyticsController {
 
             res.status(200).json(result);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch analytics");
+            handleError(res, error, "Failed to fetch analytics");
         }
     };
 
@@ -74,7 +73,7 @@ export class AnalyticsController {
 
             res.status(200).json(analytics);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch analytics");
+            handleError(res, error, "Failed to fetch analytics");
         }
     };
 
@@ -95,7 +94,7 @@ export class AnalyticsController {
 
             res.status(200).json(result);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch page views");
+            handleError(res, error, "Failed to fetch page views");
         }
     };
 
@@ -114,7 +113,7 @@ export class AnalyticsController {
                 return;
             }
 
-            const ipAddress = this.getClientIp(req);
+            const ipAddress = getClientIp(req);
             const userAgent = req.get("User-Agent") || "unknown";
             const country = await this.getCountry(ipAddress);
 
@@ -257,7 +256,7 @@ export class AnalyticsController {
             const filename = `analytics-${year}-${month}`;
             await this.exportService.toExcel(sheets, filename, res);
         } catch (error) {
-            this.handleError(res, error, "Export to Excel failed");
+            handleError(res, error, "Export to Excel failed");
         }
     };
 
@@ -312,19 +311,11 @@ export class AnalyticsController {
 
             this.exportService.toPdf(exportData, filename, title, res);
         } catch (error) {
-            this.handleError(res, error, "Export to PDF failed");
+            handleError(res, error, "Export to PDF failed");
         }
     };
 
     // Helper methods
-    private getClientIp(req: Request): string {
-        return (
-            (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
-            (req.socket as any)?.remoteAddress ||
-            "unknown"
-        );
-    }
-
     private async getCountry(ipAddress: string): Promise<string> {
         try {
             // Gunakan service eksternal atau fallback
@@ -349,15 +340,5 @@ export class AnalyticsController {
             return "ID"; // Local network → Indonesia
         }
         return "XX";
-    }
-
-    private handleError(
-        res: Response,
-        error: unknown,
-        defaultMessage: string,
-        statusCode: number = 500
-    ): void {
-        const message = error instanceof Error ? error.message : defaultMessage;
-        res.status(statusCode).json({ error: message });
     }
 }

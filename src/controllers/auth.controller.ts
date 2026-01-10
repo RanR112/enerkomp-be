@@ -24,6 +24,7 @@
 import { Request, Response } from "express";
 import { AuthService } from "../services/auth.service";
 import { jwtConfig } from "../config/jwt.config";
+import { getClientIp, handleError } from "../utils/http-helper";
 
 export class AuthController {
     constructor(private authService: AuthService) {}
@@ -43,7 +44,7 @@ export class AuthController {
                 return;
             }
 
-            const ipAddress = this.getClientIp(req);
+            const ipAddress = getClientIp(req);
             const userAgent = req.get("User-Agent") || "";
 
             const result = await this.authService.login(
@@ -62,7 +63,7 @@ export class AuthController {
                 user: result.user,
             });
         } catch (error) {
-            this.handleError(res, error, "Authentication failed", 401);
+            handleError(res, error, "Authentication failed", 401);
         }
     };
 
@@ -80,7 +81,7 @@ export class AuthController {
                 return;
             }
 
-            const ipAddress = this.getClientIp(req);
+            const ipAddress = getClientIp(req);
             const userAgent = req.get("User-Agent") || "";
 
             const newAccessToken = await this.authService.refreshAccessToken(
@@ -98,7 +99,7 @@ export class AuthController {
 
             res.status(200).json({ accessToken: newAccessToken });
         } catch (error) {
-            this.handleError(res, error, "Invalid refresh token", 401);
+            handleError(res, error, "Invalid refresh token", 401);
         }
     };
 
@@ -116,7 +117,7 @@ export class AuthController {
                 return;
             }
 
-            const ipAddress = this.getClientIp(req);
+            const ipAddress = getClientIp(req);
             const userAgent = req.get("User-Agent") || "";
 
             await this.authService.logout(refreshToken, ipAddress, userAgent);
@@ -125,7 +126,7 @@ export class AuthController {
 
             res.status(200).json({ message: "Logged out successfully" });
         } catch (error) {
-            this.handleError(res, error, "Logout failed", 400);
+            handleError(res, error, "Logout failed", 400);
         }
     };
 
@@ -141,7 +142,7 @@ export class AuthController {
                 return;
             }
 
-            const ipAddress = this.getClientIp(req);
+            const ipAddress = getClientIp(req);
             const userAgent = req.get("User-Agent") || "";
 
             const cooldownStatus = await this.authService.forgotPassword(
@@ -187,7 +188,7 @@ export class AuthController {
                 return;
             }
 
-            const ipAddress = this.getClientIp(req);
+            const ipAddress = getClientIp(req);
             const userAgent = req.get("User-Agent") || "";
 
             await this.authService.resetPassword(
@@ -201,7 +202,7 @@ export class AuthController {
                 message: "Password has been reset successfully",
             });
         } catch (error) {
-            this.handleError(res, error, "Invalid reset token", 400);
+            handleError(res, error, "Invalid reset token", 400);
         }
     };
 
@@ -219,7 +220,39 @@ export class AuthController {
             const user = await this.authService.getMe(req.user.id);
             res.status(200).json(user);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch user profile", 400);
+            handleError(res, error, "Failed to fetch user profile", 400);
+        }
+    };
+
+    /**
+     * Endpoint: PUT /me
+     * Update profil pengguna saat ini
+     */
+    updateMe = async (req: Request, res: Response): Promise<void> => {
+        try {
+            if (!req.user) {
+                res.status(401).json({ error: "Unauthorized" });
+                return;
+            }
+
+            const { name, email, phone } = req.body;
+
+            const ipAddress = getClientIp(req);
+            const userAgent = req.get("User-Agent") || "";
+
+            const updatedUser = await this.authService.updateMe(
+                req.user.id,
+                { name, email, phone },
+                ipAddress,
+                userAgent
+            );
+
+            res.status(200).json({
+                message: "Profile updated successfully",
+                data: updatedUser,
+            });
+        } catch (error) {
+            handleError(res, error, "Failed to update profile", 400);
         }
     };
 
@@ -242,7 +275,7 @@ export class AuthController {
             const avatarUrl = await this.authService.updateOwnAvatar(
                 req.user.id,
                 req.file,
-                this.getClientIp(req),
+                getClientIp(req),
                 req.get("User-Agent") || ""
             );
 
@@ -251,7 +284,7 @@ export class AuthController {
                 avatar: avatarUrl,
             });
         } catch (error) {
-            this.handleError(res, error, "Failed to update avatar", 400);
+            handleError(res, error, "Failed to update avatar", 400);
         }
     };
 
@@ -268,7 +301,7 @@ export class AuthController {
 
             await this.authService.deleteOwnAvatar(
                 req.user.id,
-                this.getClientIp(req),
+                getClientIp(req),
                 req.get("User-Agent") || ""
             );
 
@@ -277,7 +310,7 @@ export class AuthController {
                 avatar: "/uploads/avatars/default-avatar.png",
             });
         } catch (error) {
-            this.handleError(res, error, "Failed to delete avatar", 400);
+            handleError(res, error, "Failed to delete avatar", 400);
         }
     };
 
@@ -321,24 +354,5 @@ export class AuthController {
             req.cookies?.refresh_token ||
             (req.headers["x-refresh-token"] as string | null)
         );
-    }
-
-    private getClientIp(req: Request): string {
-        return (
-            req.ip ||
-            (req.connection as any)?.remoteAddress ||
-            (req.headers["x-forwarded-for"] as string) ||
-            ""
-        );
-    }
-
-    private handleError(
-        res: Response,
-        error: unknown,
-        defaultMessage: string,
-        statusCode: number
-    ): void {
-        const message = error instanceof Error ? error.message : defaultMessage;
-        res.status(statusCode).json({ error: message });
     }
 }

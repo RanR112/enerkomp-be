@@ -26,6 +26,7 @@ import { BrandService } from "../services/brand.service";
 import { SlugService } from "../services/slug.service";
 import { SortOrderService } from "../services/sort-order.service";
 import { ExportService } from "../services/reporting/export.service";
+import { getClientIp, handleError } from "../utils/http-helper";
 
 export class BrandController {
     constructor(
@@ -67,7 +68,7 @@ export class BrandController {
 
             res.status(200).json(result);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch brands");
+            handleError(res, error, "Failed to fetch brands");
         }
     };
 
@@ -87,7 +88,7 @@ export class BrandController {
 
             res.status(200).json(brand);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch brand");
+            handleError(res, error, "Failed to fetch brand");
         }
     };
 
@@ -129,13 +130,13 @@ export class BrandController {
                 isActive,
                 sortOrder,
                 createdBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(201).json(brand);
         } catch (error) {
-            this.handleError(res, error, "Failed to create brand", 400);
+            handleError(res, error, "Failed to create brand", 400);
         }
     };
 
@@ -185,13 +186,13 @@ export class BrandController {
                 isActive,
                 sortOrder,
                 updatedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(200).json(brand);
         } catch (error) {
-            this.handleError(res, error, "Failed to update brand", 400);
+            handleError(res, error, "Failed to update brand", 400);
         }
     };
 
@@ -206,13 +207,13 @@ export class BrandController {
             await this.brandService.delete({
                 id,
                 deletedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(200).json({ message: "Brand deleted successfully" });
         } catch (error) {
-            this.handleError(res, error, "Failed to delete brand", 400);
+            handleError(res, error, "Failed to delete brand", 400);
         }
     };
 
@@ -227,13 +228,13 @@ export class BrandController {
             await this.brandService.hardDelete({
                 id,
                 deletedBy: req.user!.id,
-                ipAddress: this.getClientIp(req),
+                ipAddress: getClientIp(req),
                 userAgent: req.get("User-Agent") || "",
             });
 
             res.status(204).end();
         } catch (error) {
-            this.handleError(res, error, "Failed to hard delete brand", 400);
+            handleError(res, error, "Failed to hard delete brand", 400);
         }
     };
 
@@ -268,7 +269,7 @@ export class BrandController {
 
             await this.exportService.toExcel(sheets, "brands-report", res);
         } catch (error) {
-            this.handleError(res, error, "Export to Excel failed");
+            handleError(res, error, "Export to Excel failed");
         }
     };
 
@@ -300,27 +301,7 @@ export class BrandController {
                 res
             );
         } catch (error) {
-            this.handleError(res, error, "Export to PDF failed");
+            handleError(res, error, "Export to PDF failed");
         }
     };
-
-    // Helper methods
-    private getClientIp(req: Request): string {
-        return (
-            req.ip ||
-            (req.connection as any)?.remoteAddress ||
-            (req.headers["x-forwarded-for"] as string) ||
-            ""
-        );
-    }
-
-    private handleError(
-        res: Response,
-        error: unknown,
-        defaultMessage: string,
-        statusCode: number = 500
-    ): void {
-        const message = error instanceof Error ? error.message : defaultMessage;
-        res.status(statusCode).json({ error: message });
-    }
 }

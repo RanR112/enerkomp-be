@@ -549,6 +549,78 @@ export class AuthService {
     }
 
     /**
+     * Update profil pengguna (tanpa password)
+     * @param userId - ID user yang sedang login
+     * @param payload - Data profil yang boleh diubah
+     * @param ipAddress - IP address untuk audit
+     * @param userAgent - User agent untuk audit
+     */
+    async updateMe(
+        userId: string,
+        payload: {
+            name?: string;
+            email?: string;
+            phone?: string;
+        },
+        ipAddress?: string,
+        userAgent?: string
+    ) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        // Jika email diubah, pastikan tidak dipakai user lain
+        if (payload.email && payload.email !== user.email) {
+            const existingUser = await this.prisma.user.findUnique({
+                where: { email: payload.email },
+            });
+
+            if (existingUser) {
+                throw new Error("Email already in use");
+            }
+        }
+
+        const updatedUser = await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                name: payload.name,
+                email: payload.email,
+                phone: payload.phone,
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                avatar: true,
+                roleId: true,
+            },
+        });
+
+        await this.auditService.log({
+            userId,
+            action: "UPDATE_PROFILE",
+            tableName: "User",
+            recordId: userId,
+            oldValues: {
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+            },
+            newValues: payload,
+            details: "User profile updated",
+            ipAddress,
+            userAgent,
+        });
+
+        return updatedUser;
+    }
+
+    /**
      * Update avatar pengguna saat ini
      * @param userId - ID pengguna
      * @param avatarFile - File avatar baru

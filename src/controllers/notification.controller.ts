@@ -22,6 +22,7 @@
 
 import { Request, Response } from "express";
 import { NotificationService } from "../services/notification.service";
+import { handleError } from "../utils/http-helper";
 
 export class NotificationController {
     constructor(private notificationService: NotificationService) {}
@@ -42,7 +43,7 @@ export class NotificationController {
 
             res.status(200).json(result);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch notifications");
+            handleError(res, error, "Failed to fetch notifications");
         }
     };
 
@@ -58,7 +59,7 @@ export class NotificationController {
 
             res.status(200).json({ message: "Notification marked as read" });
         } catch (error) {
-            this.handleError(res, error, "Failed to mark as read", 400);
+            handleError(res, error, "Failed to mark as read", 400);
         }
     };
 
@@ -74,18 +75,7 @@ export class NotificationController {
 
             res.status(200).json({ count });
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch unread count");
+            handleError(res, error, "Failed to fetch unread count");
         }
     };
-
-    // Helper methods
-    private handleError(
-        res: Response,
-        error: unknown,
-        defaultMessage: string,
-        statusCode: number = 500
-    ): void {
-        const message = error instanceof Error ? error.message : defaultMessage;
-        res.status(statusCode).json({ error: message });
-    }
 }

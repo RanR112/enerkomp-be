@@ -21,6 +21,7 @@
 
 import { Request, Response } from "express";
 import { RoleService } from "../services/role.service";
+import { handleError } from "../utils/http-helper";
 
 export class RoleController {
     constructor(private roleService: RoleService) {}
@@ -42,7 +43,7 @@ export class RoleController {
 
             res.status(200).json(result);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch roles");
+            handleError(res, error, "Failed to fetch roles");
         }
     };
 
@@ -62,7 +63,7 @@ export class RoleController {
 
             res.status(200).json(role);
         } catch (error) {
-            this.handleError(res, error, "Failed to fetch role");
+            handleError(res, error, "Failed to fetch role");
         }
     };
 
@@ -92,7 +93,7 @@ export class RoleController {
 
             res.status(201).json(role);
         } catch (error) {
-            this.handleError(res, error, "Failed to create role", 400);
+            handleError(res, error, "Failed to create role", 400);
         }
     };
 
@@ -124,7 +125,7 @@ export class RoleController {
 
             res.status(200).json(updated);
         } catch (error) {
-            this.handleError(res, error, "Failed to update role", 400);
+            handleError(res, error, "Failed to update role", 400);
         }
     };
 
@@ -145,7 +146,7 @@ export class RoleController {
 
             res.status(200).json({ message: "Role deleted successfully" });
         } catch (error) {
-            this.handleError(res, error, "Failed to delete role", 400);
+            handleError(res, error, "Failed to delete role", 400);
         }
     };
 
@@ -166,18 +167,7 @@ export class RoleController {
 
             res.status(204).end();
         } catch (error) {
-            this.handleError(res, error, "Failed to hard delete role", 400);
+            handleError(res, error, "Failed to hard delete role", 400);
         }
     };
-
-    // Helper untuk penanganan error konsisten
-    private handleError(
-        res: Response,
-        error: unknown,
-        defaultMessage: string,
-        statusCode: number = 500
-    ): void {
-        const message = error instanceof Error ? error.message : defaultMessage;
-        res.status(statusCode).json({ error: message });
-    }
 }
