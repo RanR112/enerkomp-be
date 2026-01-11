@@ -32,6 +32,7 @@ import { PrismaClient, UserStatus } from "@prisma/client";
 import { PasswordService } from "./password.service";
 import { FileService } from "./file.service";
 import { AuditService } from "./audit.service";
+import { appConfig } from "../config/app.config";
 
 export interface CreateUserInput {
     name: string;
@@ -67,7 +68,7 @@ export interface DeleteUserInput {
 }
 
 export class UserService {
-    private readonly DEFAULT_AVATAR = "/uploads/avatars/default-avatar.png";
+    private readonly DEFAULT_AVATAR = appConfig.defaultAvatar;
 
     constructor(
         private prisma: PrismaClient,

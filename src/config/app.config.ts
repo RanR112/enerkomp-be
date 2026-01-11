@@ -15,6 +15,7 @@ import path from "path";
 export interface AppConfig {
     uploadDir: string;
     maxFileSize: number; // dalam byte
+    defaultAvatar: string;
 }
 
 export const appConfig: AppConfig = {
@@ -23,4 +24,5 @@ export const appConfig: AppConfig = {
         : path.resolve(__dirname, "../../public/uploads"),
 
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE || "2097152", 10), // 2MB default
+    defaultAvatar: process.env.DEFAULT_AVATAR ?? "/uploads/avatars/default-avatar.png",
 };
